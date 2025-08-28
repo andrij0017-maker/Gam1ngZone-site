@@ -1,0 +1,349 @@
+# Create a simple neon-style, single-page site for Gam1ngZone.
+# Files: index.html, styles.css, script.js, /assets/logo.jpeg (from the user's uploaded image), /assets/placeholder.svg
+
+import os, shutil, textwrap, json, base64, pathlib
+
+root = "/mnt/data/Gam1ngZone-site"
+assets = os.path.join(root, "assets")
+os.makedirs(assets, exist_ok=True)
+
+# Copy the uploaded avatar into assets
+src_logo = "/mnt/data/422F8B15-2CB8-4CFC-9EF5-E3CEE635BA36.jpeg"
+dst_logo = os.path.join(assets, "logo.jpeg")
+if os.path.exists(src_logo):
+    shutil.copy(src_logo, dst_logo)
+
+# Create a tiny placeholder SVG to use for demo product images (neon gradient look)
+placeholder_svg = """
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#00F5FF"/>
+      <stop offset="50%" stop-color="#7C4DFF"/>
+      <stop offset="100%" stop-color="#FF2EC4"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="20" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="100%" height="100%" fill="#0c0f1a"/>
+  <circle cx="120" cy="120" r="90" fill="url(#g)" filter="url(#glow)" opacity="0.6"/>
+  <circle cx="680" cy="380" r="120" fill="url(#g)" filter="url(#glow)" opacity="0.5"/>
+  <text x="50%" y="52%" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="56" fill="#e6faff">Gam1ngZone</text>
+</svg>
+"""
+with open(os.path.join(assets, "placeholder.svg"), "w", encoding="utf-8") as f:
+    f.write(placeholder_svg)
+
+# Create styles.css
+styles_css = """
+/* ===== Gam1ngZone — Neon Gamer Theme ===== */
+:root{
+  --bg:#0b0f17;
+  --card:#121829;
+  --neon-cyan:#00f5ff;
+  --neon-pink:#ff2ec4;
+  --neon-violet:#7c4dff;
+  --text:#e6faff;
+  --muted:#9fb2c8;
+  --success:#1ecb7a;
+  --danger:#ff5e5e;
+  --shadow: 0 0 20px rgba(0,245,255,.35), 0 0 30px rgba(124,77,255,.25), 0 0 50px rgba(255,46,196,.2);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;}
+a{color:var(--neon-cyan);text-decoration:none}
+a:hover{filter:brightness(1.2)}
+.container{max-width:1200px;margin:0 auto;padding:0 16px}
+
+/* Header */
+.header{
+  position:sticky; top:0; z-index:50;
+  background:rgba(11,15,23,.7);
+  backdrop-filter: saturate(140%) blur(10px);
+  border-bottom:1px solid rgba(124,77,255,.25);
+}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:10px 0}
+.brand{display:flex;align-items:center;gap:12px}
+.brand img{height:48px;width:48px;border-radius:10px;box-shadow:var(--shadow)}
+.brand .title{font-weight:800;letter-spacing:.5px}
+.badge{font-size:12px;padding:2px 8px;border:1px solid var(--neon-violet);border-radius:999px;color:#d9caff}
+
+/* Menu */
+.menu{display:flex;gap:18px;flex-wrap:wrap}
+.menu a{padding:8px 12px;border:1px solid rgba(0,245,255,.3);border-radius:8px}
+.menu a:hover{box-shadow:0 0 12px rgba(0,245,255,.4)}
+
+/* Hero */
+.hero{
+  padding:48px 0 24px;
+  background:
+    radial-gradient(60% 50% at 10% 10%, rgba(0,245,255,.12), transparent 60%),
+    radial-gradient(60% 50% at 90% 20%, rgba(124,77,255,.15), transparent 60%),
+    radial-gradient(60% 50% at 50% 90%, rgba(255,46,196,.12), transparent 60%);
+  border-bottom:1px solid rgba(124,77,255,.25);
+}
+.hero h1{font-size:42px;margin:12px 0 10px}
+.hero p{color:var(--muted);max-width:740px}
+
+/* CTA buttons */
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:10px 14px;border-radius:10px;border:1px solid rgba(0,245,255,.35);
+  background:linear-gradient(180deg, rgba(124,77,255,.18), rgba(0,245,255,.05));
+  box-shadow:var(--shadow);
+}
+.btn.secondary{border-color:rgba(124,77,255,.35)}
+.btn span{opacity:.9}
+
+/* Slider */
+.slider{position:relative;overflow:hidden;border-radius:16px;margin:22px 0;background:#0c1020;border:1px solid rgba(124,77,255,.25)}
+.slides{display:flex;transition:transform .6s ease}
+.slide{min-width:100%;padding:38px;background:url('assets/placeholder.svg') center/cover no-repeat}
+.slide h3{font-size:28px;margin:0 0 6px}
+.tag{display:inline-block;margin-top:8px;padding:4px 10px;border-radius:999px;border:1px solid rgba(255,46,196,.5);font-size:12px;color:#ffd7f0}
+.slider .navbtn{
+  position:absolute;top:50%;transform:translateY(-50%);
+  background:rgba(12,16,32,.6);border:1px solid rgba(0,245,255,.4);
+  padding:8px 12px;border-radius:10px;cursor:pointer
+}
+.slider .prev{left:8px}.slider .next{right:8px}
+
+/* Section */
+.section{padding:26px 0 10px}
+.section h2{margin:0 0 12px;font-size:28px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+@media(max-width:1000px){.grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){.grid{grid-template-columns:repeat(2,1fr)}}
+.card{
+  background:var(--card);border:1px solid rgba(124,77,255,.25);border-radius:14px;overflow:hidden;
+  display:flex;flex-direction:column;min-height:100%
+}
+.card .img{aspect-ratio:4/3;background:url('assets/placeholder.svg') center/cover no-repeat}
+.card h3{font-size:16px;margin:10px 12px 4px}
+.price{display:flex;align-items:center;gap:8px;margin:0 12px 12px}
+.price .old{color:#a2a9bd;text-decoration:line-through}
+.price .new{font-weight:700;color:#e6faff}
+.badges{display:flex;gap:6px;margin:0 12px 12px;flex-wrap:wrap}
+.badges .b{font-size:11px;padding:3px 8px;border-radius:999px;border:1px solid rgba(0,245,255,.35)}
+.actions{margin:0 12px 14px}
+.buy{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(0,245,255,.5);background:rgba(0,245,255,.08);color:var(--text)}
+.buy:hover{filter:brightness(1.1)}
+
+/* Contacts */
+.contacts{
+  margin:28px 0; padding:18px; border:1px dashed rgba(0,245,255,.35); border-radius:12px;
+  background:linear-gradient(180deg, rgba(124,77,255,.12), rgba(0,245,255,.05));
+}
+
+/* Footer */
+.footer{padding:26px 0;color:#a1b5cc;border-top:1px solid rgba(124,77,255,.25)}
+small{color:#91a6bf}
+"""
+
+with open(os.path.join(root, "styles.css"), "w", encoding="utf-8") as f:
+    f.write(styles_css)
+
+# Create script.js with demo products easy to edit
+script_js = """
+/* ===== Simple slider + product render ===== */
+
+// Slider
+const slides = document.querySelector('.slides');
+let idx = 0;
+function move(n){ 
+  const count = slides.children.length;
+  idx = (idx + n + count) % count;
+  slides.style.transform = `translateX(-${idx*100}%)`;
+}
+document.querySelector('.prev').addEventListener('click', ()=>move(-1));
+document.querySelector('.next').addEventListener('click', ()=>move(+1));
+
+// ===== DEMO PRODUCTS (easy to edit) =====
+// You can change everything below. Add/remove items freely.
+const products = {
+  hits: [
+    {title:'Гарнітура Attack Shark L80 Pro', price:1899, old:null, tags:['Топ продаж','RGB','Мікрофон'], link:'#'},
+    {title:'Клавіатура Royal Kludge R75 (Hot-Swap)', price:2799, old:3199, tags:['Hot-swap','Gateron'], link:'#'},
+    {title:'Мишка Logitech G102 Lightsync', price:899, old:1099, tags:['8000 DPI','Легка'], link:'#'},
+    {title:'Геймпад Flydigi Vader 4 Pro', price:3299, old:null, tags:['Bluetooth','PC/Android/iOS'], link:'#'}
+  ],
+  sale: [
+    {title:'Мікрофон Fifine K669', price:1499, old:1799, tags:['USB','Кардіоїда'], link:'#'},
+    {title:'Маршрутизатор TP-Link Archer AX23', price:2299, old:2699, tags:['Wi‑Fi 6','Dual-Band'], link:'#'},
+    {title:'Килимок для миші XXL RGB', price:599, old:799, tags:['900×400','RGB'], link:'#'},
+    {title:'USB-C кабель 100W (1м)', price:199, old:299, tags:['PD 100W','Нейлон'], link:'#'}
+  ],
+  new: [
+    {title:'Навушники Sony INZONE H5', price:5799, old:null, tags:['Low-latency','Комфорт'], link:'#'},
+    {title:'Клавіатура Akko 5075S', price:3999, old:null, tags:['Гасники','PBT'], link:'#'},
+    {title:'Мишка Razer Cobra', price:2199, old:null, tags:['58 г','Speedflex'], link:'#'},
+    {title:'Геймпад 8BitDo Ultimate', price:2899, old:null, tags:['Charging Dock','Hall'], link:'#'}
+  ]
+};
+
+function renderSection(id, list){
+  const root = document.getElementById(id);
+  root.innerHTML = list.map(p => `
+    <article class="card">
+      <div class="img"></div>
+      <h3>${p.title}</h3>
+      <div class="badges">${(p.tags||[]).map(t=>`<span class="b">${t}</span>`).join('')}</div>
+      <div class="price">
+        ${p.old ? `<span class="old">${p.old} грн</span>`:''}
+        <span class="new">${p.price} грн</span>
+      </div>
+      <div class="actions">
+        <a class="buy" href="${p.link}" target="_blank" rel="noopener">Купити</a>
+      </div>
+    </article>
+  `).join('');
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  renderSection('hits', products.hits);
+  renderSection('sale', products.sale);
+  renderSection('new', products.new);
+});
+"""
+
+with open(os.path.join(root, "script.js"), "w", encoding="utf-8") as f:
+    f.write(script_js)
+
+# Create index.html
+index_html = """
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gam1ngZone — геймерська периферія</title>
+  <!-- prevent indexing -->
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#0b0f17">
+  <link rel="icon" href="assets/logo.jpeg">
+  <link rel="preload" href="assets/placeholder.svg" as="image">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- ====== HEADER ====== -->
+  <header class="header">
+    <div class="container nav">
+      <div class="brand">
+        <img src="assets/logo.jpeg" alt="Gam1ngZone logo">
+        <div>
+          <div class="title">Gam1ngZone</div>
+          <div class="badge">Магазин геймерської периферії</div>
+        </div>
+      </div>
+      <nav class="menu">
+        <a href="#hits">Хіти продажу</a>
+        <a href="#sale">Знижки</a>
+        <a href="#new">Новинки</a>
+        <a href="#contacts">Контакти</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ====== HERO ====== -->
+  <section class="hero">
+    <div class="container">
+      <h1>Периферія для перемог у <span style="text-shadow:0 0 12px #00f5ff;">Gam1ngZone</span></h1>
+      <p>Навушники, клавіатури, миші, килимки, геймпади, мікрофони, кабелі, роутери та інші комплектуючі для ПК. Швидка консультація, чесні ціни, підбір під твій сетап.</p>
+      <div class="cta">
+        <a class="btn" href="https://t.me/labchi_k" target="_blank" rel="noopener">
+          <span>Telegram</span>
+        </a>
+        <a class="btn secondary" href="viber://chat?number=%2B380689655060">
+          <span>Viber</span>
+        </a>
+        <a class="btn" href="tel:+380689655060">
+          <span>+380 68 965 50 60</span>
+        </a>
+        <a class="btn" href="https://prom.ua/ua/c3968831-company.html" target="_blank" rel="noopener">
+          <span>Магазин на Prom</span>
+        </a>
+      </div>
+
+      <!-- Slider -->
+      <div class="slider" aria-label="Акційні банери">
+        <div class="slides">
+          <div class="slide">
+            <h3>Знижки до −30% на периферію</h3>
+            <div class="tag">Акція тижня</div>
+          </div>
+          <div class="slide">
+            <h3>Механічні клавіатури RGB</h3>
+            <div class="tag">Хіт сезону</div>
+          </div>
+          <div class="slide">
+            <h3>Новинки для кіберспортсменів</h3>
+            <div class="tag">У наявності</div>
+          </div>
+        </div>
+        <button class="navbtn prev" aria-label="Попередній">‹</button>
+        <button class="navbtn next" aria-label="Наступний">›</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== SECTIONS ====== -->
+  <section class="section container" id="hits">
+    <h2>Хіти продажу</h2>
+    <div class="grid" id="hits"></div>
+  </section>
+
+  <section class="section container" id="sale">
+    <h2>Знижки</h2>
+    <div class="grid" id="sale"></div>
+  </section>
+
+  <section class="section container" id="new">
+    <h2>Новинки</h2>
+    <div class="grid" id="new"></div>
+  </section>
+
+  <!-- ====== CONTACTS ====== -->
+  <section class="container contacts" id="contacts">
+    <h2>Контакти</h2>
+    <p>Напиши нам у зручний месенджер або подзвони: </p>
+    <div class="cta">
+      <a class="btn" href="https://t.me/labchi_k" target="_blank" rel="noopener"><span>Telegram: @labchi_k</span></a>
+      <a class="btn secondary" href="viber://chat?number=%2B380689655060"><span>Viber: +380 68 965 50 60</span></a>
+      <a class="btn" href="tel:+380689655060"><span>Подзвонити</span></a>
+      <a class="btn" href="https://prom.ua/ua/c3968831-company.html" target="_blank" rel="noopener"><span>Магазин на Prom</span></a>
+    </div>
+    <p style="margin-top:12px;color:#9fb2c8">* Сторінка закрита від індексації пошуковиками (meta robots noindex,nofollow). Для додаткового захисту додай <code>robots.txt</code> на хостингу.</p>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <small>© <span id="year"></span> Gam1ngZone. Всі права захищено.</small>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+  <script src="script.js"></script>
+
+  <!-- ===== HOW TO EDIT =====
+  1) Замінити демо-товари — відкрийте script.js → об'єкт 'products'.
+  2) Тексти/кнопки — у index.html (цей файл), пошук по словах.
+  3) Кольори — у styles.css (змінні :root).
+  4) Лого — заміни файл assets/logo.jpeg.
+  5) Хостинг — закинь папку на Netlify / GitHub Pages. 
+  -->
+</body>
+</html>
+"""
+with open(os.path.join(root, "index.html"), "w", encoding="utf-8") as f:
+    f.write(index_html)
+
+# Provide final path listing as output
+sorted(list(pathlib.Path(root).glob("**/*")))[:10], root
